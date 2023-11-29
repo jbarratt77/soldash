@@ -1,46 +1,49 @@
-'use client'
+"use client";
 
-import { FC, useEffect, useState } from "react"
-import { useWallet, useConnection } from "@solana/wallet-adapter-react"
-import { LAMPORTS_PER_SOL } from "@solana/web3.js"
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Typography from '@mui/material/Typography';
+import { FC, useEffect, useState } from "react";
+import { useWallet, useConnection } from "@solana/wallet-adapter-react";
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Typography from "@mui/material/Typography";
 
 export const AccountOverview: FC = () => {
-  const [ balance, setBalance ] = useState(0)
+  const [balance, setBalance] = useState(0);
 
-  const { connection } = useConnection()
-  const { publicKey } = useWallet()
+  const { connection } = useConnection();
+  const { publicKey } = useWallet();
 
   useEffect(() => {
-    if(!connection || !publicKey) {
-      return
+    if (!connection || !publicKey) {
+      return;
     }
 
-    connection.onAccountChange(publicKey, (updatedAccountInfo) => {
-      setBalance(updatedAccountInfo.lamports)
-    },'confirmed')
+    connection.onAccountChange(
+      publicKey,
+      (updatedAccountInfo) => {
+        setBalance(updatedAccountInfo.lamports);
+      },
+      "confirmed"
+    );
 
     connection.getAccountInfo(publicKey).then((info) => {
-      if(!info) {
-        return
+      if (!info) {
+        return;
       }
-      setBalance(info?.lamports)
-    })
-
-  },[connection, publicKey])
+      setBalance(info?.lamports);
+    });
+  }, [connection, publicKey]);
 
   return (
-    <Card sx={{ maxWidth: 275 }}>
+    <Card sx={{ flexGrow: 1, m: 2  }}>
       <CardContent>
         <Typography sx={{ fontSize: 14 }} color="text.secondary" gutterBottom>
           Balance:
         </Typography>
-        <Typography variant="h5" component="div">
+        <Typography>
           {publicKey ? `${balance / LAMPORTS_PER_SOL} SOL` : ""}
         </Typography>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
