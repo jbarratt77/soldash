@@ -7,25 +7,89 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
+import Link from "@mui/material/Link";
+import { PublicKey, Transaction } from "@solana/web3.js";
+import {
+  createMintToInstruction,
+  getAssociatedTokenAddress,
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  getAccount,
+} from "@solana/spl-token";
 
 export const MintTokens: FC = () => {
+  const [txSig, setTxSig] = useState("");
   const [mint, setMint] = useState("");
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState(0);
-  const [transactionSignature, setTransactionSignature] = useState("");
+  const [tokenAccount, setTokenAccount] = useState("");
+  const [balance, setBalance] = useState("");
 
   const { connection } = useConnection();
-  const { publicKey } = useWallet();
+  const { publicKey, sendTransaction } = useWallet();
+  const link = () => {
+    return txSig
+      ? `https://explorer.solana.com/tx/${txSig}?cluster=devnet`
+      : "";
+  };
 
-  const handleMintFieldChange = function () {};
+  useEffect(() => {
+    if (!connection || !publicKey) {
+      return;
+    }
 
-  const handleRecipientFieldChange = function () {};
-  const handleAmountFieldChange = function () {};
+    setRecipient(publicKey.toString());
+  }, [connection, publicKey]);
 
-  const handleMintTokensButton = async function () {};
+  const handleMintFieldChange = function (event: any) {
+    const { target } = event;
+    setMint(target.value);
+  };
+  const handleRecipientFieldChange = function (event: any) {
+    const { target } = event;
+    setRecipient(target.value);
+  };
+  const handleAmountFieldChange = function (event: any) {
+    const { target } = event;
+    setAmount(target.value);
+  };
+
+  const handleMintTokensButton = async function () {
+    if (!connection || !publicKey) {
+      return;
+    }
+
+    const mintPubkey = new PublicKey(mint);
+    const recipientPubKey = new PublicKey(recipient);
+
+    const associatedTokenAddress = await getAssociatedTokenAddress(
+      mintPubkey,
+      recipientPubKey,
+      false,
+      TOKEN_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID
+    );
+
+    const transaction = new Transaction().add(
+      createMintToInstruction(
+        mintPubkey,
+        associatedTokenAddress,
+        publicKey,
+        amount
+      )
+    );
+
+    sendTransaction(transaction, connection).then(async (sig) => {
+      setTxSig(sig);
+      setTokenAccount(associatedTokenAddress.toString());
+      const account = await getAccount(connection, associatedTokenAddress)
+      console.log("tokenAccount", account)
+      setBalance(account.amount.toString())
+    });
+  };
 
   return (
-    <Card sx={{ flexGrow: 1, m: 2  }}>
+    <Card sx={{ flexGrow: 1, m: 2 }}>
       <CardContent>
         <Typography sx={{ fontSize: 14 }} color="text.secondary" gutterBottom>
           Mint Tokens
@@ -57,13 +121,17 @@ export const MintTokens: FC = () => {
           onChange={handleAmountFieldChange}
           value={amount}
         />
-        <Button onClick={handleMintTokensButton}>
-          Mint Tokens
-        </Button>
-        {transactionSignature && (
-          <Typography variant="h5" component="div">
-            {transactionSignature}
-          </Typography>
+        <Button onClick={handleMintTokensButton}>Mint Tokens</Button>
+
+        {txSig && (
+          <>
+            <Typography>Token Account: {tokenAccount}</Typography>
+            <Typography>Token Account Balance: {balance}</Typography>
+            <Typography>View your transaction on</Typography>
+            <Typography>
+              <Link href={link()}>Solana Explorer</Link>
+            </Typography>
+          </>
         )}
       </CardContent>
     </Card>
