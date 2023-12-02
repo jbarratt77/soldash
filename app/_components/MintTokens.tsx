@@ -83,7 +83,6 @@ export const MintTokens: FC = () => {
       setTxSig(sig);
       setTokenAccount(associatedTokenAddress.toString());
       const account = await getAccount(connection, associatedTokenAddress)
-      console.log("tokenAccount", account)
       setBalance(account.amount.toString())
     });
   };
